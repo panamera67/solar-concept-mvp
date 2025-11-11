@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  role         UserRole
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  assessments  Assessment[] @relation("AssessmentAuthor")
+  submissions  Submission[]
+}
+
+model Assessment {
+  id             String            @id @default(cuid())
+  title          String
+  description    String
+  status         AssessmentStatus  @default(DRAFT)
+  authorId       String
+  author         User              @relation("AssessmentAuthor", fields: [authorId], references: [id])
+  items          AssessmentItem[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  submissions    Submission[]
+  enterpriseTag  String?
+}
+
+model AssessmentItem {
+  id             String         @id @default(cuid())
+  assessmentId   String
+  assessment     Assessment     @relation(fields: [assessmentId], references: [id])
+  prompt         String
+  expectedAnswer String?
+  gradingMode    GradingMode    @default(KEYWORDS)
+  keywords       String[]
+  maxScore       Int
+  weight         Float          @default(1)
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  submissions    SubmissionItem[]
+}
+
+model Submission {
+  id             String           @id @default(cuid())
+  assessmentId   String
+  assessment     Assessment       @relation(fields: [assessmentId], references: [id])
+  candidateId    String
+  candidateName  String
+  candidateEmail String?
+  reviewerId     String?
+  reviewer       User?            @relation(fields: [reviewerId], references: [id])
+  status         SubmissionStatus @default(PENDING)
+  overallScore   Float?
+  scoreBreakdown Json?
+  answers        SubmissionItem[]
+  submittedAt    DateTime         @default(now())
+  reviewedAt     DateTime?
+  feedback       String?
+}
+
+model SubmissionItem {
+  id             String     @id @default(cuid())
+  submissionId   String
+  submission     Submission @relation(fields: [submissionId], references: [id])
+  itemId         String
+  item           AssessmentItem @relation(fields: [itemId], references: [id])
+  answer         String
+  score          Float?
+  maxScore       Float
+  status         ItemStatus @default(PENDING)
+  feedback       String?
+  createdAt      DateTime   @default(now())
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  REVIEWER
+  CONTRIBUTOR
+}
+
+enum AssessmentStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  PENDING
+  AUTO_GRADED
+  IN_REVIEW
+  COMPLETED
+}
+
+enum ItemStatus {
+  PENDING
+  AUTO_GRADED
+  NEEDS_REVIEW
+  COMPLETED
+}
+

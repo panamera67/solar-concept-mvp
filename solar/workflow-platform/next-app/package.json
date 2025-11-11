@@ -1,0 +1,18 @@
+{
+  "name": "next-workflow-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "next": "14.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "pg": "^8.11.0",
+    "dotenv": "^16.0.0",
+    "assert": "^2.1.0"
+  }
+}

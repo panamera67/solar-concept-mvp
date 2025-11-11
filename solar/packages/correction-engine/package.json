@@ -1,0 +1,22 @@
+{
+  "name": "@solar/correction-engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/index.ts",
+    "lint": "echo \"No lint configured\"",
+    "test": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "natural": "^6.9.6",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}

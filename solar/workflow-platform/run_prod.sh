@@ -5,45 +5,33 @@ echo "🚀 Initialisation du déploiement Solar Workflow Platform (production)"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$ROOT_DIR/infra/docker-compose.prod.yml"
-DEFAULT_ENV_FILE="$ROOT_DIR/.env.prod"
-ALT_ENV_FILE="$ROOT_DIR/infra/.env.prod"
 
-if [ $# -ge 1 ]; then
-  ENV_FILE="$1"
-else
-  if [ -f "$DEFAULT_ENV_FILE" ]; then
-    ENV_FILE="$DEFAULT_ENV_FILE"
-  elif [ -f "$ALT_ENV_FILE" ]; then
-    ENV_FILE="$ALT_ENV_FILE"
-  else
-    ENV_FILE="$DEFAULT_ENV_FILE"
-  fi
-fi
-
+# Choix du fichier d'environnement
+ENV_FILE="${1:-$ROOT_DIR/infra/.env.prod}"
 if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ Fichier d'environnement introuvable ($ENV_FILE). Copiez infra/.env.prod.example et remplissez les valeurs réelles."
+  echo "❌ Fichier d'environnement introuvable : $ENV_FILE"
   exit 1
 fi
 
-echo "✅ Environnement chargé depuis $ENV_FILE"
+echo "✅ Utilisation du fichier d'environnement : $ENV_FILE"
 export $(grep -v '^#' "$ENV_FILE" | xargs)
 
-echo "🔧 Construction et lancement de la stack Docker (mode production)"
+# Build et démarrage des conteneurs
+echo "🏗️  Construction et lancement des services..."
 docker compose -f "$COMPOSE_FILE" up -d --build
 
-echo "⏳ Attente du démarrage de PostgreSQL..."
-until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
-  sleep 2
+# Attente que Postgres soit prêt
+echo "⏳ Attente de la disponibilité de la base de données..."
+until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME"; do
+  echo "En attente de Postgres..."
+  sleep 3
 done
-echo "✅ PostgreSQL opérationnel"
+echo "✅ Postgres est prêt"
 
-echo "📜 Application des migrations SQL..."
-docker compose -f "$COMPOSE_FILE" exec -T backend npm run migrate
+# Exécution des migrations
+echo "🔄 Exécution des migrations..."
+docker compose -f "$COMPOSE_FILE" exec -T backend node scripts/migrate.js
 
-echo "🧩 Vérification du workflow API..."
-curl -s -X GET "$BACKEND_URL/api/health" | jq
-
-echo "📊 Journaux récents du backend :"
-docker compose -f "$COMPOSE_FILE" logs --tail=20 backend
-
-echo "🏁 Déploiement de production terminé avec succès."
+# Vérification des logs backend pour confirmer le démarrage
+echo "📖 Suivi des logs backend (CTRL+C pour quitter)..."
+docker compose -f "$COMPOSE_FILE" logs -f backend

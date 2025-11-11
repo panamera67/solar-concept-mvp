@@ -1,0 +1,4 @@
+-----BEGIN CERTIFICATE-----
+This is a placeholder certificate for local usage only.
+Replace it with your actual TLS certificate (e.g., from Let's Encrypt).
+-----END CERTIFICATE-----

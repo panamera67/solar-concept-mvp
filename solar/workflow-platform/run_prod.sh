@@ -5,10 +5,23 @@ echo "🚀 Initialisation du déploiement Solar Workflow Platform (production)"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$ROOT_DIR/infra/docker-compose.prod.yml"
-ENV_FILE="$ROOT_DIR/.env.prod"
+DEFAULT_ENV_FILE="$ROOT_DIR/.env.prod"
+ALT_ENV_FILE="$ROOT_DIR/infra/.env.prod"
+
+if [ $# -ge 1 ]; then
+  ENV_FILE="$1"
+else
+  if [ -f "$DEFAULT_ENV_FILE" ]; then
+    ENV_FILE="$DEFAULT_ENV_FILE"
+  elif [ -f "$ALT_ENV_FILE" ]; then
+    ENV_FILE="$ALT_ENV_FILE"
+  else
+    ENV_FILE="$DEFAULT_ENV_FILE"
+  fi
+fi
 
 if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ Fichier .env.prod manquant. Copiez .env.prod.example et remplissez les valeurs réelles."
+  echo "❌ Fichier d'environnement introuvable ($ENV_FILE). Copiez infra/.env.prod.example et remplissez les valeurs réelles."
   exit 1
 fi
 
@@ -19,7 +32,7 @@ echo "🔧 Construction et lancement de la stack Docker (mode production)"
 docker compose -f "$COMPOSE_FILE" up -d --build
 
 echo "⏳ Attente du démarrage de PostgreSQL..."
-until docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "$POSTGRES_USER" >/dev/null 2>&1; do
+until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
   sleep 2
 done
 echo "✅ PostgreSQL opérationnel"
